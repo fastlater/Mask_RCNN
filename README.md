@@ -22,30 +22,31 @@ If you extend this model to other datasets or build projects that use it, we'd l
 
 * [Images to OSM](https://github.com/jremillard/images-to-osm): Use TensorFlow, Bing, and OSM to find features in satellite images.
 The goal is to improve OpenStreetMap by adding high quality baseball, soccer, tennis, football, and basketball fields.
-
+* [4K Video Demo](https://www.youtube.com/watch?v=OOT3UIXZztE): A beautiful demo on 4K video, by Karol Majek.
+    [![Mask RCNN on 4K Video](assets/4k_video.gif)](https://www.youtube.com/watch?v=OOT3UIXZztE)
 
 # Getting Started
-* [demo.ipynb](/demo.ipynb) Is the easiest way to start. It shows an example of using a model pre-trained on MS COCO to segment objects in your own images.
+* [demo.ipynb](samples/demo.ipynb) Is the easiest way to start. It shows an example of using a model pre-trained on MS COCO to segment objects in your own images.
 It includes code to run object detection and instance segmentation on arbitrary images.
 
-* [train_shapes.ipynb](train_shapes.ipynb) shows how to train Mask R-CNN on your own dataset. This notebook introduces a toy dataset (Shapes) to demonstrate training on a new dataset.
+* [train_shapes.ipynb](samples/shapes/train_shapes.ipynb) shows how to train Mask R-CNN on your own dataset. This notebook introduces a toy dataset (Shapes) to demonstrate training on a new dataset.
 
-* ([model.py](model.py), [utils.py](utils.py), [config.py](config.py)): These files contain the main Mask RCNN implementation. 
+* ([model.py](mrcnn/model.py), [utils.py](mrcnn/utils.py), [config.py](mrcnn/config.py)): These files contain the main Mask RCNN implementation. 
 
 
-* [inspect_data.ipynb](/inspect_data.ipynb). This notebook visualizes the different pre-processing steps
+* [inspect_data.ipynb](samples/inspect_data.ipynb). This notebook visualizes the different pre-processing steps
 to prepare the training data.
 
-* [inspect_model.ipynb](/inspect_model.ipynb) This notebook goes in depth into the steps performed to detect and segment objects. It provides visualizations of every step of the pipeline.
+* [inspect_model.ipynb](samples/inspect_model.ipynb) This notebook goes in depth into the steps performed to detect and segment objects. It provides visualizations of every step of the pipeline.
 
-* [inspect_weights.ipynb](/inspect_weights.ipynb)
+* [inspect_weights.ipynb](samples/inspect_weights.ipynb)
 This notebooks inspects the weights of a trained model and looks for anomalies and odd patterns.
 
 
 # Step by Step Detection
 To help with debugging and understanding the model, there are 3 notebooks 
-([inspect_data.ipynb](inspect_data.ipynb), [inspect_model.ipynb](inspect_model.ipynb),
-[inspect_weights.ipynb](inspect_weights.ipynb)) that provide a lot of visualizations and allow running the model step by step to inspect the output at each point. Here are a few examples:
+([inspect_data.ipynb](samples/inspect_data.ipynb), [inspect_model.ipynb](samples/inspect_model.ipynb),
+[inspect_weights.ipynb](samples/inspect_weights.ipynb)) that provide a lot of visualizations and allow running the model step by step to inspect the output at each point. Here are a few examples:
 
 
 
@@ -85,32 +86,32 @@ TensorBoard is another great debugging and visualization tool. The model is conf
 # Training on MS COCO
 We're providing pre-trained weights for MS COCO to make it easier to start. You can
 use those weights as a starting point to train your own variation on the network.
-Training and evaluation code is in coco.py. You can import this
+Training and evaluation code is in `samples/coco/coco.py`. You can import this
 module in Jupyter notebook (see the provided notebooks for examples) or you
 can run it directly from the command line as such:
 
 ```
 # Train a new model starting from pre-trained COCO weights
-python3 coco.py train --dataset=/path/to/coco/ --model=coco
+python3 samples/coco/coco.py train --dataset=/path/to/coco/ --model=coco
 
 # Train a new model starting from ImageNet weights
-python3 coco.py train --dataset=/path/to/coco/ --model=imagenet
+python3 samples/coco/coco.py train --dataset=/path/to/coco/ --model=imagenet
 
 # Continue training a model that you had trained earlier
-python3 coco.py train --dataset=/path/to/coco/ --model=/path/to/weights.h5
+python3 samples/coco/coco.py train --dataset=/path/to/coco/ --model=/path/to/weights.h5
 
 # Continue training the last model you trained. This will find
 # the last trained weights in the model directory.
-python3 coco.py train --dataset=/path/to/coco/ --model=last
+python3 samples/coco/coco.py train --dataset=/path/to/coco/ --model=last
 ```
 
 You can also run the COCO evaluation code with:
 ```
 # Run COCO evaluation on the last trained model
-python3 coco.py evaluate --dataset=/path/to/coco/ --model=last
+python3 samples/coco/coco.py evaluate --dataset=/path/to/coco/ --model=last
 ```
 
-The training schedule, learning rate, and other parameters should be set in coco.py.
+The training schedule, learning rate, and other parameters should be set in `samples/coco/coco.py`.
 
 
 # Training on Your Own Dataset
@@ -128,13 +129,13 @@ all available in one dataset.
 
 The ```Dataset``` class itself is the base class. To use it, create a new
 class that inherits from it and adds functions specific to your dataset.
-See the base `Dataset` class in utils.py and examples of extending it in train_shapes.ipynb and coco.py.
+See the base `Dataset` class in `utils.py` and examples of extending it in `samples/coco/train_shapes.ipynb` and `samples/coco/coco.py`.
 
 ## Differences from the Official Paper
 This implementation follows the Mask RCNN paper for the most part, but there are a few cases where we deviated in favor of code simplicity and generalization. These are some of the differences we're aware of. If you encounter other differences, please do let us know.
 
 * **Image Resizing:** To support training multiple images per batch we resize all images to the same size. For example, 1024x1024px on MS COCO. We preserve the aspect ratio, so if an image is not square we pad it with zeros. In the paper the resizing is done such that the smallest side is 800px and the largest is trimmed at 1000px.
-* **Bounding Boxes**: Some datasets provide bounding boxes and some provide masks only. To support training on multiple datasets we opted to ignore the bounding boxes that come with the dataset and generate them on the fly instead. We pick the smallest box that encapsulates all the pixels of the mask as the bounding box. This simplifies the implementation and also makes it easy to apply certain image augmentations that would otherwise be really hard to apply to bounding boxes, such as image rotation.
+* **Bounding Boxes**: Some datasets provide bounding boxes and some provide masks only. To support training on multiple datasets we opted to ignore the bounding boxes that come with the dataset and generate them on the fly instead. We pick the smallest box that encapsulates all the pixels of the mask as the bounding box. This simplifies the implementation and also makes it easy to apply image augmentations that would otherwise be harder to apply to bounding boxes, such as image rotation.
 
     To validate this approach, we compared our computed bounding boxes to those provided by the COCO dataset.
 We found that ~2% of bounding boxes differed by 1px or more, ~0.05% differed by 5px or more, 
@@ -159,11 +160,7 @@ Contributions to this repository are welcome. Examples of things you can contrib
 You can also [join our team](https://matterport.com/careers/) and help us build even more projects like this one.
 
 ## Requirements
-* Python 3.4+
-* TensorFlow 1.3+
-* Keras 2.0.8+
-* Jupyter Notebook
-* Numpy, skimage, scipy, Pillow, cython, h5py
+Python 3.4, TensorFlow 1.3, Keras 2.0.8 and other common packages listed in `requirements.txt`.
 
 ### MS COCO Requirements:
 To train or test on MS COCO, you'll also need:
@@ -178,9 +175,17 @@ If you use Docker, the code has been verified to work on
 
 
 ## Installation
-1. Clone this repository
-2. Download pre-trained COCO weights (mask_rcnn_coco.h5) from the [releases page](https://github.com/matterport/Mask_RCNN/releases).
-3. (Optional) To train or test on MS COCO install `pycocotools` from one of these repos. They are forks of the original pycocotools with fixes for Python3 and Windows (the official repo doesn't seem to be active anymore).
+1. Install dependencies
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+2. Clone this repository
+3. Run setup from the repository root directory
+    ```bash
+    python3 setup.py install
+    ``` 
+3. Download pre-trained COCO weights (mask_rcnn_coco.h5) from the [releases page](https://github.com/matterport/Mask_RCNN/releases).
+4. (Optional) To train or test on MS COCO install `pycocotools` from one of these repos. They are forks of the original pycocotools with fixes for Python3 and Windows (the official repo doesn't seem to be active anymore).
 
     * Linux: https://github.com/waleedka/coco
     * Windows: https://github.com/philferriere/cocoapi.
